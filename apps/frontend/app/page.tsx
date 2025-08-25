@@ -1,38 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, KeyboardEvent, useCallback } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import Image from 'next/image';
 
-const Spinner = () => (
-    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-);
+const Spinner = () => ( <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> );
+const LoadingDots = () => ( <div className="flex space-x-1 justify-center items-center"><span className="sr-only">Loading...</span><div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div><div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div><div className="h-2 w-2 bg-white rounded-full animate-bounce"></div></div> );
 
-const LoadingDots = () => (
-    <div className="flex space-x-1 justify-center items-center">
-        <span className="sr-only">Loading...</span>
-        <div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-        <div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-        <div className="h-2 w-2 bg-white rounded-full animate-bounce"></div>
-    </div>
-);
+interface VideoFormat { itag: string; qualityLabel: string; container: string; }
+interface VideoInfo { title: string; thumbnail: string; formats: VideoFormat[]; }
 
-interface VideoFormat {
-    itag: string;
-    qualityLabel: string;
-    container: string;
-}
-interface VideoInfo {
-    title: string;
-    thumbnail: string;
-    formats: VideoFormat[];
-}
-
-const BACKEND_URL = 'http://localhost:4000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export default function Home() {
     const [url, setUrl] = useState<string>('');
@@ -42,7 +21,25 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState<'audio' | 'video'>('audio');
     const [preparingDownload, setPreparingDownload] = useState<string | null>(null);
     const bookmarkletRef = useRef<HTMLAnchorElement>(null);
-    const resultsRef = useRef<HTMLElement>(null); 
+    const resultsRef = useRef<HTMLElement>(null);
+
+    const handleFetchInfo = useCallback(async (fetchUrl?: string) => {
+        const targetUrl = fetchUrl || url;
+        if (!targetUrl.trim() || loading) { return; }
+        setLoading(true);
+        setError('');
+        setVideoInfo(null);
+        
+        try {
+            const response = await axios.get(`${BACKEND_URL}/info`, { params: { url: targetUrl } });
+            if (response.data.success) setVideoInfo(response.data);
+            else setError(response.data.error);
+        } catch (err) {
+            setError('Could not connect to the server. Is it running?');
+        } finally {
+            setLoading(false);
+        }
+    }, [url, loading]);
 
     useEffect(() => {
         const bookmarkletHref = `javascript:void(window.open('${window.location.origin}/?url='+encodeURIComponent(window.location.href)));`;
@@ -56,7 +53,7 @@ export default function Home() {
             setUrl(urlFromQuery);
             handleFetchInfo(urlFromQuery);
         }
-    }, [loading, videoInfo]);
+    }, [loading, videoInfo, handleFetchInfo]);
 
     useEffect(() => {
         if (!preparingDownload) return;
@@ -75,25 +72,6 @@ export default function Home() {
             resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, [videoInfo]);
-
-
-    const handleFetchInfo = async (fetchUrl?: string) => {
-        const targetUrl = fetchUrl || url;
-        if (!targetUrl.trim() || loading) { return; }
-        setLoading(true);
-        setError('');
-        setVideoInfo(null);
-        
-        try {
-            const response = await axios.get(`${BACKEND_URL}/info`, { params: { url: targetUrl } });
-            if (response.data.success) setVideoInfo(response.data);
-            else setError(response.data.error);
-        } catch (err) {
-            setError('Could not connect to the server. Is it running?');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleDownload = (downloadUrl: string, downloadId: string) => {
         setPreparingDownload(downloadId);
@@ -116,7 +94,6 @@ export default function Home() {
             </header>
 
             <main className="flex-grow flex flex-col items-center p-4 text-center">
-                
                 <section className="w-full max-w-3xl mt-12 md:mt-20">
                     <div className="bg-white shadow-2xl rounded-2xl p-8">
                         <h1 className="text-4xl md:text-5xl font-bold text-slate-800">
@@ -158,91 +135,28 @@ export default function Home() {
                 </section>
                 
                 {!videoInfo && !loading && (
-                    <section className="w-full max-w-6xl mt-12 text-left">
-                        
-
-                        <div className="grid md:grid-cols-3 mt-10 gap-8 mb-12">
-                            <div className="text-center">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-16 h-16 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                                        <span className="text-2xl font-bold text-gray-800">∞</span>
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-pink-600 mb-3">Free Unlimited Conversion</h3>
-                                <p className="text-gray-700 leading-relaxed">
-                                    Download YouTube videos for free using Tubely and users can download unlimited YouTube videos. Enjoy the freedom to download as many videos as you want.
-                                </p>
+                    <section className="w-full max-w-3xl mt-12 text-left p-6 bg-white shadow-lg rounded-xl">
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h2 className="text-xl font-semibold text-slate-700 border-b pb-2 mb-3">Instructions</h2>
+                                <ol className="list-decimal list-inside space-y-2 text-slate-600">
+                                    <li>Search by name or directly paste the link of video you want to convert.</li>
+                                    <li>Click "Start" button to begin converting process.</li>
+                                    <li>Select the video/audio format you want to download, then click "Download" button.</li>
+                                </ol>
                             </div>
-
-                            <div className="text-center">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-16 h-16 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                                        <svg className="w-8 h-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-pink-600 mb-3">Easy and User-Friendly Interface</h3>
-                                <p className="text-gray-700 leading-relaxed">
-                                    Tubely features an attractive and easy-to-use interface that simplifies the process of downloading videos from YouTube. Simply copy and paste the YouTube video URL into the designated field to begin your download.
-                                </p>
-                            </div>
-
-                            <div className="text-center">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-16 h-16 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                                        <span className="text-lg font-bold text-gray-800">8K</span>
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-pink-600 mb-3">High-Quality Downloads</h3>
-                                <p className="text-gray-700 leading-relaxed">
-                                    Our Tubely platform supports multiple high-quality downloads, ensuring that users receive the same quality as YouTube. You can download YouTube videos in 720p, 1080p, and even up to 8K resolution.
-                                </p>
+                            <div>
+                                <h2 className="text-xl font-semibold text-slate-700 border-b pb-2 mb-3">Features</h2>
+                                <ul className="list-disc list-inside space-y-2 text-slate-600">
+                                    <li>Unlimited downloads and always free.</li>
+                                    <li>High-speed video converter.</li>
+                                    <li>No registration required.</li>
+                                    <li>Support downloading with all formats.</li>
+                                </ul>
                             </div>
                         </div>
-
-                        <div className="grid md:grid-cols-3 gap-8 mb-12">
-                            <div className="text-center">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-16 h-16 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                                        <svg className="w-8 h-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-pink-600 mb-3">Very Fast Download</h3>
-                                <p className="text-gray-700 leading-relaxed">
-                                    Tubely is the fastest downloader that quickly converts and downloads videos, so you don't have to wait long for your video download and without sacrificing quality.
-                                </p>
-                            </div>
-
-                            <div className="text-center">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-16 h-16 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                                        <svg className="w-8 h-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-pink-600 mb-3">No Software Installation</h3>
-                                <p className="text-gray-700 leading-relaxed">
-                                    Tubely operates entirely online, allowing you to use the service directly in your web browser without the need to install any software. Enjoy the convenience of downloading videos without the hassle of registration or logins.
-                                </p>
-                            </div>
-
-                            <div className="text-center">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-16 h-16 border-2 border-gray-800 rounded-full flex items-center justify-center">
-                                        <svg className="w-8 h-8 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-bold text-pink-600 mb-3">Compatible with all devices</h3>
-                                <p className="text-gray-700 leading-relaxed">
-                                    Tubely is a web-based YouTube downloader that works seamlessly on all devices, including smartphones, computers, and tablets. It also works seamlessly with all popular browsers such as Chrome, Firefox, Safari, Microsoft Edge, and Opera.
-                                </p>
-                            </div>
+                        <div className="mt-8 text-center text-slate-500">
+                             <p>Tubely supports downloading all video formats such as: MP4, M4V, 3GP, WMV, FLV, MO, MP3, WEBM, etc. You can easily download for free thousands of videos from YouTube and other websites.</p>
                         </div>
                     </section>
                 )}
@@ -253,7 +167,7 @@ export default function Home() {
                     <section ref={resultsRef} className="mt-12 w-full max-w-4xl p-6 bg-white shadow-xl rounded-2xl mb-12">
                         <div className="flex flex-col md:flex-row gap-8">
                             <div className="w-full md:w-1/3">
-                                <img src={videoInfo.thumbnail} alt={videoInfo.title} className="w-full rounded-lg shadow-md" />
+                                <Image src={videoInfo.thumbnail} alt={videoInfo.title} className="w-full rounded-lg shadow-md" width={480} height={270} />
                                 <h2 className="text-lg font-semibold text-slate-700 mt-2 text-left">{videoInfo.title}</h2>
                             </div>
                             <div className="w-full md:w-2/3">
