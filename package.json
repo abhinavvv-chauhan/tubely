@@ -1,0 +1,13 @@
+{
+  "name": "yt-converter-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.4"
+  },
+  "packageManager": "pnpm@9.4.0"
+}

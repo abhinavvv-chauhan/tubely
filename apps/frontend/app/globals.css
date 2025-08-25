@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+.bg-grainy {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='%23d3d3d3' fill-opacity='0.4'%3E%3Cpath d='M0 64V0h64v64H0zM1.188 4.062l59.75 59.75-2.375 2.375-59.75-59.75zM60 4V60H4V4h56zM12 52l40-40-4-4-40 40 4 4zM0 16h64v8H0v-8zm0 32h64v8H0v-8z'%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
+}
