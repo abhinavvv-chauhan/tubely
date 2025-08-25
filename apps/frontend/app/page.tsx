@@ -34,7 +34,7 @@ export default function Home() {
             const response = await axios.get(`${BACKEND_URL}/info`, { params: { url: targetUrl } });
             if (response.data.success) setVideoInfo(response.data);
             else setError(response.data.error);
-        } catch (error) {
+        } catch (err) {
             setError('Could not connect to the server. Is it running?');
         } finally {
             setLoading(false);
