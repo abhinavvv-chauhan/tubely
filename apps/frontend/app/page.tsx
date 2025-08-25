@@ -34,7 +34,7 @@ export default function Home() {
             const response = await axios.get(`${BACKEND_URL}/info`, { params: { url: targetUrl } });
             if (response.data.success) setVideoInfo(response.data);
             else setError(response.data.error);
-        } catch (err) {
+        } catch (error) {
             setError('Could not connect to the server. Is it running?');
         } finally {
             setLoading(false);
@@ -126,7 +126,7 @@ export default function Home() {
                                 ref={bookmarkletRef}
                                 onClick={(e) => e.preventDefault()}
                                 className="inline-block mt-3 px-4 py-2 bg-gray-600 text-white font-bold rounded-md shadow-md hover:bg-gray-900 transition-colors cursor-move"
-                                title="Drag me to your bookmarks bar!"
+                                title='Drag me to your bookmarks bar!'
                             >
                                 Download with Tubely
                             </a>
