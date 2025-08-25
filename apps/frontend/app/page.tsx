@@ -34,8 +34,6 @@ export default function Home() {
             const response = await axios.get(`${BACKEND_URL}/info`, { params: { url: targetUrl } });
             if (response.data.success) setVideoInfo(response.data);
             else setError(response.data.error);
-        } catch (err) {
-            setError('Could not connect to the server. Is it running?');
         } finally {
             setLoading(false);
         }
@@ -141,8 +139,8 @@ export default function Home() {
                                 <h2 className="text-xl font-semibold text-slate-700 border-b pb-2 mb-3">Instructions</h2>
                                 <ol className="list-decimal list-inside space-y-2 text-slate-600">
                                     <li>Search by name or directly paste the link of video you want to convert.</li>
-                                    <li>Click "Start" button to begin converting process.</li>
-                                    <li>Select the video/audio format you want to download, then click "Download" button.</li>
+                                    <li>Click &quot;Start&quot; button to begin converting process.</li>
+                                    <li>Select the video/audio format you want to download, then click &quot;Download&quot; button.</li>
                                 </ol>
                             </div>
                             <div>
