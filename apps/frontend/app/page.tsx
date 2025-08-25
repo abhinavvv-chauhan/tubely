@@ -226,7 +226,7 @@ export default function Home() {
                                 </div>
                                 <h3 className="text-xl font-bold text-pink-600 mb-3">No Software Installation</h3>
                                 <p className="text-gray-700 leading-relaxed">
-                                    Tubely operates entirely online, allowing you to use the service directly in your web browser without the need to install any software. Enjoy the convenience of downloading videos without the hassle of registration or log-ins.
+                                    Tubely operates entirely online, allowing you to use the service directly in your web browser without the need to install any software. Enjoy the convenience of downloading videos without the hassle of registration or logins.
                                 </p>
                             </div>
 
