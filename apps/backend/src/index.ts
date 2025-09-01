@@ -11,8 +11,19 @@ let ffmpegPath: string | undefined;
 try {
     ffmpegPath = require('ffmpeg-static');
 } catch (e) {
-    console.error("ffmpeg-static not found. Audio merging will fail.");
+    console.error("ffmpeg-static not found. Audio merging will likely fail.");
 }
+
+(async () => {
+    try {
+        console.log('Ensuring yt-dlp binary is available...');
+        await YTDlpWrap.downloadFromGithub();
+        console.log('yt-dlp binary is ready.');
+    } catch (error) {
+        console.error('Failed to download or verify yt-dlp binary:', error);
+    }
+})();
+
 
 const PORT = process.env.PORT || 4000;
 app.use(cors());
