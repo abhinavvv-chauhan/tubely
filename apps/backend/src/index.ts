@@ -3,6 +3,7 @@ import cors from 'cors';
 import 'dotenv/config';
 import YTDlpWrap from 'yt-dlp-wrap';
 import path from 'path';
+import fs from 'fs';
 
 const app = express();
 let ytDlpWrap: YTDlpWrap | null = null;
@@ -14,13 +15,20 @@ try {
   console.error("ffmpeg-static not found. Audio merging will likely fail.");
 }
 
+const ytDlpBinaryPath = path.join(process.cwd(), 'yt-dlp');
+
 (async () => {
   try {
-    console.log('Ensuring yt-dlp binary is available...');
-    const ytDlpPath = await YTDlpWrap.downloadFromGithub();
-    //@ts-ignore
-    ytDlpWrap = new YTDlpWrap(ytDlpPath);
-    console.log('yt-dlp binary is ready at:', ytDlpPath);
+    if (!fs.existsSync(ytDlpBinaryPath)) {
+      console.log('Downloading yt-dlp binary...');
+      await YTDlpWrap.downloadFromGithub(ytDlpBinaryPath);
+      console.log('yt-dlp binary downloaded.');
+    } else {
+      console.log('yt-dlp binary already exists, reusing it.');
+    }
+
+    ytDlpWrap = new YTDlpWrap(ytDlpBinaryPath);
+    console.log('yt-dlp binary is ready at:', ytDlpBinaryPath);
   } catch (error) {
     console.error('Failed to download or verify yt-dlp binary:', error);
   }
@@ -49,6 +57,7 @@ const ensureYtDlpReady = (res: express.Response) => {
   }
   return true;
 };
+
 
 app.get('/info', async (req, res) => {
   if (!ensureYtDlpReady(res)) return;
