@@ -64,51 +64,37 @@ const ensureYtDlpReady = (res: express.Response) => {
 };
 
 app.get("/info", async (req, res) => {
-  if (!ensureYtDlpReady(res)) return;
+  const url = req.query.url as string;
+  console.log("Fetching info for:", url);
+
+  if (!url) {
+    return res.status(400).json({ error: "No URL provided" });
+  }
 
   try {
-    const videoURL = req.query.url as string;
-    if (!videoURL) {
-      return res.status(400).json({ success: false, error: "URL is required" });
+    const ytDlpWrap = new YTDlpWrap(path.join(process.cwd(), "yt-dlp"));
+    
+    const rawOutput = await ytDlpWrap.execPromise([url, "-J"]);
+    console.log("yt-dlp raw output (first 200 chars):", rawOutput.slice(0, 200));
+
+    let info;
+    try {
+      info = JSON.parse(rawOutput);
+    } catch (jsonErr) {
+      console.error("Failed to parse yt-dlp JSON:", jsonErr);
+      return res.status(500).json({ 
+        error: "yt-dlp returned invalid JSON", 
+        raw: rawOutput 
+      });
     }
 
-    const stdout = await ytDlpWrap!.execPromise([videoURL, "--dump-json"]);
-    const metadata = JSON.parse(stdout);
-
-    const standardResolutions = [1080, 720, 480, 360, 240];
-    const uniqueFormats = new Map();
-
-    metadata.formats.forEach((format: any) => {
-      if (
-        format.ext === "mp4" &&
-        format.vcodec !== "none" &&
-        standardResolutions.includes(format.height)
-      ) {
-        if (!uniqueFormats.has(format.height)) {
-          uniqueFormats.set(format.height, {
-            itag: format.format_id,
-            qualityLabel: `${format.height}p`,
-            container: format.ext,
-          });
-        }
-      }
-    });
-
-    const cleanedFormats = Array.from(uniqueFormats.values()).sort((a: any, b: any) =>
-      b.qualityLabel.localeCompare(a.qualityLabel, undefined, { numeric: true })
-    );
-
-    res.json({
-      success: true,
-      title: metadata.title,
-      thumbnail: metadata.thumbnail,
-      formats: cleanedFormats,
-    });
-  } catch (error) {
-    console.error("Error fetching video info:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch video information." });
+    res.json(info);
+  } catch (err: any) {
+    console.error("Error fetching video info:", err);
+    res.status(500).json({ error: err.message });
   }
 });
+
 
 app.get("/download-mp4", (req, res) => {
   if (!ensureYtDlpReady(res)) return;
