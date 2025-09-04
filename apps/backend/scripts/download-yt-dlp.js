@@ -1,28 +1,39 @@
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
-const { chmodSync } = require('fs');
+// scripts/download-yt-dlp.js
+const https = require("https");
+const fs = require("fs");
+const path = require("path");
 
-const YT_DLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp';
-const outputPath = path.join(process.cwd(), 'yt-dlp');
+const YT_DLP_URL = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
+const outputPath = path.join(process.cwd(), "yt-dlp");
+
+function download(url, dest, cb) {
+  https.get(url, (res) => {
+    if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+      console.log("Redirecting to:", res.headers.location);
+      return download(res.headers.location, dest, cb);
+    }
+
+    if (res.statusCode !== 200) {
+      return cb(new Error(`Failed to download yt-dlp: Status ${res.statusCode}`));
+    }
+
+    const file = fs.createWriteStream(dest, { mode: 0o755 });
+    res.pipe(file);
+
+    file.on("finish", () => {
+      file.close(cb);
+    });
+  }).on("error", (err) => {
+    cb(err);
+  });
+}
 
 console.log("Downloading yt-dlp binary from:", YT_DLP_URL);
-
-https.get(YT_DLP_URL, (response) => {
-  if (response.statusCode !== 200) {
-    console.error(`Failed to download yt-dlp: Status ${response.statusCode}`);
+download(YT_DLP_URL, outputPath, (err) => {
+  if (err) {
+    console.error("Error downloading yt-dlp:", err.message);
     process.exit(1);
-  }
-
-  const file = fs.createWriteStream(outputPath, { mode: 0o755 });
-  response.pipe(file);
-
-  file.on('finish', () => {
-    file.close();
-    chmodSync(outputPath, 0o755);
+  } else {
     console.log(" yt-dlp binary downloaded successfully:", outputPath);
-  });
-}).on('error', (err) => {
-  console.error("Error downloading yt-dlp:", err.message);
-  process.exit(1);
+  }
 });
