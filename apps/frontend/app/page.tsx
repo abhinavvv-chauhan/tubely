@@ -112,7 +112,7 @@ export default function Home() {
                             <button 
                                 onClick={() => handleFetchInfo()} 
                                 disabled={loading} 
-                                className="px-8 py-4 bg-pink-500 text-white font-semibold rounded-r-xl hover:bg-pink-600 disabled:bg-slate-400 w-32 flex justify-center items-center"
+                                className="px-8 py-4 bg-pink-500 cursor-pointer text-white font-semibold rounded-r-xl hover:bg-pink-600 disabled:bg-slate-400 w-32 flex justify-center items-center"
                             >
                                 {loading ? <LoadingDots /> : 'Start'}
                             </button>
@@ -195,7 +195,7 @@ export default function Home() {
                                                         <button
                                                             disabled={!!preparingDownload}
                                                             onClick={() => handleDownload(`${BACKEND_URL}/download-mp3-hq?url=${encodeURIComponent(url)}&title=${encodeURIComponent(videoInfo.title)}`, 'mp3-hq')}
-                                                            className="inline-flex cursor-pointer items-center justify-center px-4 py-2 bg-green-500 text-white font-medium rounded-md hover:bg-green-600 text-sm disabled:bg-slate-400 w-32 text-center"
+                                                            className="inline-flex cursor-pointer  items-center justify-center px-4 py-2 bg-green-500 text-white font-medium rounded-md hover:bg-green-600 text-sm disabled:bg-slate-400 w-32 text-center"
                                                         >
                                                             {preparingDownload === 'mp3-hq' ? <><Spinner /> Preparing...</> : 'Download'}
                                                         </button>
