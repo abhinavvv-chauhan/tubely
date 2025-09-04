@@ -12,35 +12,26 @@ let ffmpegPath: string | undefined;
 try {
   ffmpegPath = require('ffmpeg-static');
 } catch (e) {
-  console.error("ffmpeg-static not found. Audio merging will likely fail.");
+  console.error("ffmpeg-static not found. Audio merging may fail.");
 }
 
 const ytDlpBinaryPath = path.join(process.cwd(), 'yt-dlp');
 
-(async () => {
-  try {
-    if (!fs.existsSync(ytDlpBinaryPath)) {
-      console.log('Downloading yt-dlp binary...');
-      await YTDlpWrap.downloadFromGithub(ytDlpBinaryPath);
-      console.log('yt-dlp binary downloaded.');
-    } else {
-      console.log('yt-dlp binary already exists, reusing it.');
-    }
-
-    ytDlpWrap = new YTDlpWrap(ytDlpBinaryPath);
-    console.log('yt-dlp binary is ready at:', ytDlpBinaryPath);
-  } catch (error) {
-    console.error('Failed to download or verify yt-dlp binary:', error);
-  }
-})();
+if (fs.existsSync(ytDlpBinaryPath)) {
+  ytDlpWrap = new YTDlpWrap(ytDlpBinaryPath);
+  console.log("yt-dlp binary ready at:", ytDlpBinaryPath);
+} else {
+  console.error("yt-dlp binary not found. Did postinstall run?");
+}
 
 const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
 app.listen(PORT, () => {
-  console.log(`Backend server is live on http://localhost:${PORT}`);
+  console.log(` Backend server is live on http://localhost:${PORT}`);
 });
+
 
 const buildYtDlpArgs = (url: string, format: string, extraArgs: string[] = []) => {
   const args = [url, '-f', format, ...extraArgs];
@@ -52,7 +43,10 @@ const buildYtDlpArgs = (url: string, format: string, extraArgs: string[] = []) =
 
 const ensureYtDlpReady = (res: express.Response) => {
   if (!ytDlpWrap) {
-    res.status(503).json({ success: false, error: "yt-dlp is not ready yet, please try again in a few seconds." });
+    res.status(503).json({
+      success: false,
+      error: "yt-dlp is not ready. Please try again later."
+    });
     return false;
   }
   return true;
@@ -110,10 +104,9 @@ app.get('/download-mp4', (req, res) => {
     const itag = req.query.itag as string;
     const title = (req.query.title as string) || 'video';
 
-    res.cookie('download-status', 'starting', { path: '/' });
     res.header('Content-Disposition', `attachment; filename="${encodeURIComponent(title)}.mp4"`);
-
     const format = `${itag}+ba`;
+
     ytDlpWrap!.execStream(buildYtDlpArgs(videoURL, format)).pipe(res);
   } catch (error) {
     console.error("Error downloading MP4:", error);
@@ -128,10 +121,11 @@ app.get('/download-mp3', (req, res) => {
     const videoURL = req.query.url as string;
     const title = (req.query.title as string) || 'audio';
 
-    res.cookie('download-status', 'starting', { path: '/' });
     res.header('Content-Disposition', `attachment; filename="${encodeURIComponent(title)} (128kbps).mp3"`);
 
-    ytDlpWrap!.execStream(buildYtDlpArgs(videoURL, 'ba', ['-x', '--audio-format', 'mp3', '--audio-quality', '5'])).pipe(res);
+    ytDlpWrap!.execStream(
+      buildYtDlpArgs(videoURL, 'ba', ['-x', '--audio-format', 'mp3', '--audio-quality', '5'])
+    ).pipe(res);
   } catch (error) {
     console.error("Error downloading MP3:", error);
     res.status(500).send('Failed to download MP3.');
@@ -145,12 +139,13 @@ app.get('/download-mp3-hq', (req, res) => {
     const videoURL = req.query.url as string;
     const title = (req.query.title as string) || 'audio';
 
-    res.cookie('download-status', 'starting', { path: '/' });
     res.header('Content-Disposition', `attachment; filename="${encodeURIComponent(title)} (320kbps).mp3"`);
 
-    ytDlpWrap!.execStream(buildYtDlpArgs(videoURL, 'ba', ['-x', '--audio-format', 'mp3', '--audio-quality', '0'])).pipe(res);
+    ytDlpWrap!.execStream(
+      buildYtDlpArgs(videoURL, 'ba', ['-x', '--audio-format', 'mp3', '--audio-quality', '0'])
+    ).pipe(res);
   } catch (error) {
-    console.error("Error downloading HQ MP3:", error);
+    console.error(" Error downloading HQ MP3:", error);
     res.status(500).send('Failed to download HQ MP3.');
   }
 });
