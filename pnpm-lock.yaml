@@ -30,9 +30,9 @@ importers:
       fluent-ffmpeg:
         specifier: ^2.1.3
         version: 2.1.3
-      yt-dlp-wrap:
-        specifier: ^2.3.12
-        version: 2.3.12
+      yt-dlp-exec:
+        specifier: ^1.0.2
+        version: 1.0.2
     devDependencies:
       '@types/cors':
         specifier: ^2.8.17
@@ -2514,9 +2514,6 @@ packages:
   yt-dlp-exec@1.0.2:
     resolution: {integrity: sha512-swKtruQmGBs+Xrxy0wCZ2FxCT167EpBYIWdj/klTzNB2HrHng/qFlKo/C0WVlopbww8/uMIGQR6grXQ2ObcrAw==}
     engines: {node: '>= 12'}
-
-  yt-dlp-wrap@2.3.12:
-    resolution: {integrity: sha512-P8fJ+6M1YjukyJENCTviNLiZ8mokxprR54ho3DsSKPWDcac489OjRiStGEARJr6un6ETS6goTn4CWl/b/rM3aA==}
 
 snapshots:
 
@@ -5155,5 +5152,3 @@ snapshots:
       node-fetch: 2.6.13
     transitivePeerDependencies:
       - encoding
-
-  yt-dlp-wrap@2.3.12: {}
